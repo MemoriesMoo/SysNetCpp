@@ -1,3 +1,5 @@
+/* 功能概述：匿名管道（内存级文件）用于父子进程间通信 */
+
 #include <iostream>
 #include <unistd.h>
 #include <cassert>
@@ -8,8 +10,16 @@
 #include <cstring>
 #include <ctime>
 
-// Function to get the current time as a string
-std::string getCurrentTime() {
+/*
+    读快写慢？
+    读慢写快？
+    写关闭，读到0？
+    读关闭，写？
+*/
+
+// 获取当前时间并以字符串形式返回
+std::string getCurrentTime()
+{
     time_t now = time(0);
     struct tm tstruct;
     char buf[80];
@@ -18,8 +28,9 @@ std::string getCurrentTime() {
     return buf;
 }
 
-// Function to print a message with a specified color
-void printColoredMessage(const std::string& message, const std::string& color) {
+// 打印带有指定颜色的消息
+void printColoredMessage(const std::string &message, const std::string &color)
+{
     std::cout << "\033[" << color << "m" << message << "\033[0m" << std::endl;
 }
 
@@ -27,7 +38,7 @@ int main()
 {
     int fds[2];
 
-    // Create a pipe
+    // 创建一个管道
     int pipe_res = pipe(fds);
     assert(pipe_res == 0);
 
@@ -36,66 +47,65 @@ int main()
 
     if (id == 0)
     {
-        // In the child process
+        // 在子进程中
 
-        // Close the read end of the pipe
+        // 关闭管道的读端
         close(fds[0]);
 
-        // Child process communication code
+        // 子进程通信代码
         const char *str = "I'm the child process";
         int cnt = 0;
         while (true)
         {
             char buffer[1024];
-            // Send an event notification from child to parent with a timestamp and custom event content
+            // 从子进程向父进程发送带有时间戳和自定义事件内容的事件通知
             snprintf(buffer, sizeof(buffer), "Child[%d]: Event - Type: Alert, Description: Security breach detected", cnt++);
             std::string message = getCurrentTime() + " | Type: Event | Sender: Child | " + buffer;
             write(fds[1], message.c_str(), message.length());
-            // Write once per second
+            // 每秒写入一次
             sleep(4);
         }
 
-        // Close the write end of the pipe and exit the child process
+        // 关闭管道的写端并退出子进程
         close(fds[1]);
         exit(0);
     }
 
-    // In the parent process
+    // 在父进程中
 
-    // Close the write end of the pipe
+    // 关闭管道的写端
     close(fds[1]);
 
-    // Parent process communication code
+    // 父进程通信代码
     int cnt = 0;
     while (true)
     {
         char buffer[1024];
-        // Receive an event notification from the child
+        // 从子进程接收事件通知
         ssize_t s = read(fds[0], buffer, sizeof(buffer) - 1);
 
         if (s > 0)
         {
             buffer[s] = '\0';
-            // Print the event notification with timestamp, colored output, and sender information
+            // 打印带有时间戳、彩色输出和发送方信息的事件通知
             std::string receivedMessage = std::string(buffer);
             std::string timestamp = getCurrentTime();
             std::string senderInfo = receivedMessage.substr(receivedMessage.find("Sender:") + 8);
             std::string eventType = receivedMessage.substr(receivedMessage.find("Type:") + 6, 9);
             std::string eventDescription = receivedMessage.substr(receivedMessage.find("Description:") + 13);
             std::string coloredMessage = "Parent[" + std::to_string(cnt++) + "]: " + buffer + " (" + timestamp + ")";
-            printColoredMessage(coloredMessage, "32");  // 32 represents green color
+            printColoredMessage(coloredMessage, "32"); // 32表示绿色
             std::cout << "   Event Type: " << eventType << std::endl;
             std::cout << "   Event Description: " << eventDescription << std::endl;
             std::cout << "   Sender: " << senderInfo << std::endl;
         }
     }
 
-    // Wait for the child process to complete
+    // 等待子进程完成
     pid_t child_status = waitpid(id, nullptr, 0);
     assert(child_status == id);
 
-    // Close the read end of the pipe and exit the parent process
+    // 关闭管道的读端并退出父进程
     close(fds[0]);
     return 0;
 }
- 
