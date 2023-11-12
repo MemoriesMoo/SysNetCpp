@@ -1,128 +1,190 @@
 #include <iostream>
 #include <unistd.h>
-#include <string>
 #include <vector>
-#include <array>
-#include <cassert>
-#include <cstring>
-#include <sys/types.h>
+#include <string>
+#include <functional>
+#include <ctime>
+#include <random>
+#include <csignal>
 #include <sys/wait.h>
 
-#define POOL_SIZE 5
+#define POOL_NUM 5
 
-// 子进程信息的类
+typedef void (*func_t)();
+
 class SubProc
 {
 public:
-    // 构造函数，初始化子进程信息
-    SubProc(std::string name, pid_t subId, int writeFd, int readFd)
-        : name_(name),
-          subId_(subId),
-          writeFd_(writeFd),
-          readFd_(readFd) {}
+    SubProc(pid_t id, int writeFd)
+        : _id(id),
+          _writeFd(writeFd)
+    {
+        // 为每个子进程生成一个名字，用于标识
+        char buffer[1024]{0};
+        snprintf(buffer, sizeof(buffer) - 1, "pool[%d]-[processPid(%d)-writeFd(%d)]",
+                 cnt++, _id, writeFd);
+        _name = buffer;
+    }
 
-    std::string name_; // 进程标识
-    pid_t subId_;      // 进程ID
-    int writeFd_;      // 管道写端
-    int readFd_;       // 管道读端
+public:
+    static int cnt;    // 静态计数器，用于生成唯一的子进程名字后缀
+    std::string _name; // 子进程的名字
+    pid_t _id;         // 子进程的ID
+    int _writeFd;      // 子进程的写入文件描述符
 };
 
-// 创建进程池的函数
-void createProcessPool(std::vector<SubProc> &pool)
+int SubProc::cnt = 0;
+
+// 任务函数，这里简单实现了三个任务函数
+void downloadTask()
 {
-    for (int cnt = 0; cnt < POOL_SIZE; ++cnt)
+    sleep(1);
+    std::cout << "进程[" << getpid() << "] 正在执行下载任务!\n";
+}
+
+void ioTask()
+{
+    sleep(1);
+    std::cout << "进程[" << getpid() << "] 正在执行IO任务!\n";
+}
+
+void flushTask()
+{
+    sleep(1);
+    std::cout << "进程[" << getpid() << "] 正在执行刷新任务!\n";
+}
+
+// 将任务函数添加到任务函数向量中
+void loadTaskFunc(std::vector<func_t> &funcMap)
+{
+    funcMap.push_back(downloadTask);
+    funcMap.push_back(ioTask);
+    funcMap.push_back(flushTask);
+}
+
+// 向进程发送任务
+void sendTask(const SubProc &sp, int taskId)
+{
+    std::cout << "发送任务[" << taskId << "] 到进程 " << sp._name << "\n";
+
+    int res = write(sp._writeFd, &taskId, sizeof(taskId));
+    if (res != sizeof(taskId))
     {
-        // 用于父子进程通信的管道
-        std::array<int, 2> writePipe{0, 0};
-        std::array<int, 2> readPipe{0, 0};
-
-        // 创建管道，检查是否成功
-        int writePipeResult = pipe(writePipe.data());
-        int readPipeResult = pipe(readPipe.data());
-
-        assert(writePipeResult == 0 && readPipeResult == 0);
-
-        // 创建子进程
-        pid_t id = fork();
-        assert(id >= 0);
-
-        if (id == 0)
-        {
-            // 子进程关闭写端，只关心读端
-            close(writePipe[1]);
-            close(readPipe[0]);
-
-            char buffer[1024];
-            memset(buffer, 0, sizeof(buffer));
-
-            // 从管道读取数据
-            ssize_t readSize = read(writePipe[0], buffer, sizeof(buffer) - 1);
-
-            if (readSize == 0)
-            {
-                // 如果没有读取到数据，子进程退出
-                exit(0);
-            }
-
-            // 打印接收到的数据
-            std::cout << "Child process " << getpid() << " receive message: " << buffer << std::endl;
-
-            // 子进程可以在这里执行具体的任务
-
-            // 子进程结束前关闭读端
-            close(writePipe[0]);
-            close(readPipe[1]);
-
-            // 子进程结束
-            exit(0);
-        }
-
-        // 父进程关闭读端，只关心写端
-        close(writePipe[0]);
-        close(readPipe[1]);
-
-        // 为每个子进程创建唯一名称
-        std::string name = "SubProc" + std::to_string(cnt);
-
-        // 创建 SubProc 对象并存储在向量中
-        SubProc sub(name, id, writePipe[1], readPipe[0]);
-        pool.push_back(sub);
+        std::cerr << "写入任务失败\n";
+        // 可以根据实际需求进行错误处理，这里简单输出错误信息
     }
 }
 
+// 从进程接收任务
+int recTask(int readFd)
+{
+    int code = 0;
+    ssize_t readBytes = read(readFd, &code, sizeof(code));
+    if (readBytes != sizeof(code))
+    {
+        std::cerr << "读取任务失败\n";
+    }
+    return code;
+}
+
+// 创建进程池
+void createProcPool(std::vector<SubProc> &pool, std::vector<func_t> &funcMap)
+{
+    for (int cnt = 0; cnt < POOL_NUM; ++cnt)
+    {
+        int fds[2]{0};
+        int res = pipe(fds);
+        if (res != 0)
+        {
+            std::cerr << "创建管道失败\n";
+            exit(EXIT_FAILURE);
+        }
+
+        pid_t id = fork();
+        if (id == 0)
+        {
+            close(fds[1]); // 关闭用于写入的文件描述符
+
+            while (true)
+            {
+                int commandCode = recTask(fds[0]);
+                if (commandCode >= 0 && commandCode < funcMap.size())
+                {
+                    funcMap[commandCode]();
+                }
+                else
+                {
+                    std::cout << "子进程接收到错误的命令码\n";
+                }
+            }
+
+            exit(EXIT_SUCCESS);
+        }
+
+        close(fds[0]); // 关闭用于读取的文件描述符
+
+        SubProc sub(id, fds[1]);
+        pool.push_back(std::move(sub));
+    }
+}
+
+// 清理资源，关闭文件描述符
+void cleanupResources(const std::vector<SubProc> &pool)
+{
+    std::cout << "清理资源...\n";
+    for (const auto &subProc : pool)
+    {
+        close(subProc._writeFd);
+    }
+}
+
+// 等待子进程退出
+void waitChildProcesses(const std::vector<SubProc> &pool)
+{
+    for (const auto &subProc : pool)
+    {
+        int status;
+        waitpid(subProc._id, &status, 0);
+    }
+}
+
+// 信号处理函数，捕获Ctrl+C信号(SIGINT)
+void signalHandler(int signum)
+{
+    std::cout << "接收到信号：" << signum << "\n";
+    cleanupResources(pool);
+    exit(signum);
+}
+
+// 全局变量，用于保存进程池
+std::vector<SubProc> pool;
+
 int main()
 {
-    // 创建存储子进程信息的向量
-    std::vector<SubProc> processPool;
-    // 使用函数创建进程池
-    createProcessPool(processPool);
+    std::vector<func_t> funcMap;
+    loadTaskFunc(funcMap);
 
-    // 向每个子进程发送数据
-    for (int cnt = 0; cnt < POOL_SIZE; cnt++)
+    createProcPool(pool, funcMap);
+
+    // 注册信号处理函数，捕获Ctrl+C信号(SIGINT)
+    signal(SIGINT, signalHandler);
+
+    int taskNum = funcMap.size();
+    // 使用 C++11 中的随机数生成器替代 rand()
+    std::default_random_engine generator(std::time(0));
+    std::uniform_int_distribution<int> distribution(0, funcMap.size());
+
+    while (true)
     {
-        char buffer[1024];
-        // 格式化要发送的消息
-        snprintf(buffer, sizeof(buffer), "Parent process send message to child process, child process's pid:%d", processPool[cnt].subId_);
+        int subIndex = distribution(generator);
+        int taskIndex = distribution(generator);
 
-        // 将消息写入管道，传递给子进程
-        write(processPool[cnt].writeFd_, buffer, strlen(buffer));
-
-        // 等待一段时间，以便观察子进程输出
-        sleep(2);
+        sendTask(pool[subIndex], taskIndex);
+        sleep(3);
     }
 
-    // 等待所有子进程结束
-    for (int cnt = 0; cnt < POOL_SIZE; cnt++)
-    {
-        waitpid(processPool[cnt].subId_, nullptr, 0);
-    }
-
-    // 关闭所有管道
-    for (int cnt = 0; cnt < POOL_SIZE; cnt++)
-    {
-        close(processPool[cnt].writeFd_);
-        close(processPool[cnt].readFd_);
-    }
+    cleanupResources(pool);
+    waitChildProcesses(pool);
 
     return 0;
 }
