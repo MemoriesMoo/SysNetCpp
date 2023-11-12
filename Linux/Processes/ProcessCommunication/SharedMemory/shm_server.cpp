@@ -2,30 +2,32 @@
 #include <stdio.h>
 #include <unistd.h>
 
-int main() {
-    // Get the shared memory key
+int main()
+{
+    // 获取共享内存键
     key_t key = getKey();
-    printf("key:%d\n", key);
+    printf("key：%d\n", key);
 
-    // Create a new shared memory segment
+    // 创建新的共享内存段
     int shmId = createShm(key);
-    printf("shmId:%d\n", shmId);
+    printf("shmId：%d\n", shmId);
 
-    // Attach to the shared memory segment
+    // 连接到共享内存段
     char *start = (char *)attachShm(shmId);
-    printf("Attach successfully! Address start: %p.\n", start);
+    printf("连接成功！起始地址：%p。\n", start);
 
-    while (true) {
-        // Read and print the message from the shared memory
-        printf("Message from shared memory: %s\n", start);
-        sleep(1); // Sleep for a while before reading the next message
+    while (true)
+    {
+        // 从共享内存读取并打印消息
+        printf("来自共享内存的消息：%s\n", start);
+        sleep(1); // 在读取下一条消息之前休眠一段时间
     }
 
-    // Detach from the shared memory segment
+    // 从共享内存段分离
     detachShm(start);
-    printf("Detach successfully!\n");
+    printf("分离成功！\n");
 
-    // Delete the shared memory segment
+    // 删除共享内存段
     delShm(shmId);
 
     exit(0);

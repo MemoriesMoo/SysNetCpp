@@ -8,82 +8,90 @@
 #include <cstring>
 #include <cstdlib>
 
-#define PATH_NAME "."   // Path name for generating the shared memory key
-#define PROJ_ID 0x66     // Project identifier for generating the shared memory key
-#define MAX_SIZE 4096    // Maximum size of the shared memory segment
+#define PATH_NAME "." // 用于生成共享内存键的路径名
+#define PROJ_ID 0x66  // 用于生成共享内存键的项目标识符
+#define MAX_SIZE 4096 // 共享内存段的最大大小
 
-// Function to get the key for shared memory
+// 获取共享内存键
 key_t getKey()
 {
+    // 使用ftok函数根据路径名和项目标识符生成共享内存键
     key_t key = ftok(PATH_NAME, PROJ_ID);
 
     if (key < 0)
     {
-        // If obtaining the key fails, output error information and exit
-        std::cerr << "getKey-> Error: " << errno << ": " << strerror(errno) << std::endl;
+        // 如果获取键失败，输出错误信息并退出
+        std::cerr << "获取共享内存键失败：" << errno << " - " << strerror(errno) << std::endl;
         exit(1);
     }
 
     return key;
 }
 
-// Helper function: Get the identifier of a shared memory segment
+// 辅助函数：获取共享内存段的标识符
 int getShmHelper(key_t key, int flags)
 {
+    // 使用shmget函数获取共享内存段的标识符
     int shmId = shmget(key, MAX_SIZE, flags);
 
     if (shmId < 0)
     {
-        // If obtaining the shared memory segment fails, output error information and exit
-        std::cerr << "getShmHelper-> Error: " << errno << ": " << strerror(errno) << std::endl;
+        // 如果获取共享内存段失败，输出错误信息并退出
+        std::cerr << "获取共享内存段标识符失败：" << errno << " - " << strerror(errno) << std::endl;
         exit(2);
     }
 
     return shmId;
 }
 
-// Function to get or create a shared memory segment
+// 获取或创建共享内存段
 int getShm(key_t key)
 {
+    // 使用getShmHelper函数获取或创建共享内存段
     return getShmHelper(key, IPC_CREAT /* 0 */);
 }
 
-// Function to create a shared memory segment (error if it already exists)
+// 创建共享内存段（如果已存在则报错）
 int createShm(key_t key)
 {
+    // 使用getShmHelper函数创建共享内存段，如果已存在则报错
     return getShmHelper(key, IPC_CREAT | IPC_EXCL | 0666);
 }
 
-// Function to delete a shared memory segment
+// 删除共享内存段
 void delShm(int shmId)
 {
     if (shmctl(shmId, IPC_RMID, nullptr) == -1)
     {
-        std::cerr << "delShm-> Error: " << errno << ": " << strerror(errno) << std::endl;
+        // 如果删除共享内存段失败，输出错误信息并退出
+        std::cerr << "删除共享内存段失败：" << errno << " - " << strerror(errno) << std::endl;
         exit(3);
     }
 }
 
-// Function to attach to a shared memory segment
+// 连接到共享内存段
 void *attachShm(int shmId)
 {
+    // 使用shmat函数连接到共享内存段
     void *mem = shmat(shmId, nullptr, 0);
 
     if ((long long)mem == -1L)
     {
-        std::cerr << "attachShm-> Error: " << errno << ": " << strerror(errno) << std::endl;
+        // 如果连接失败，输出错误信息并退出
+        std::cerr << "连接共享内存段失败：" << errno << " - " << strerror(errno) << std::endl;
         exit(4);
     }
 
     return mem;
 }
 
-// Function to detach from a shared memory segment
+// 从共享内存段分离
 void detachShm(void *start)
 {
     if (shmdt(start) == -1)
     {
-        std::cout << "detachShm-> Error: " << errno << ": " << strerror(errno) << std::endl;
+        // 如果分离失败，输出错误信息并退出
+        std::cout << "分离共享内存段失败：" << errno << " - " << strerror(errno) << std::endl;
         exit(5);
     }
 }
