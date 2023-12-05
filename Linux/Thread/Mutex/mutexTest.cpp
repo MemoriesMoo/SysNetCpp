@@ -2,11 +2,12 @@
 #include <memory>
 #include <unistd.h>
 #include <vector>
+#include "mutex.hpp"
 
 #define NUM 4
 
 // （全局锁不需要初始化销毁）
-// pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 
 class ThreadData
 {
@@ -25,6 +26,22 @@ public:
 // 要实现多个线程串行访问临界资源 -- 互斥
 // 对临界资源进行访问 -- 原子性
 
+// 锁是如何实现的？原子操作
+// 底层原理伪代码介绍
+// lock(初始mutex = 1共享锁):
+//      movb $0 %al
+//      xchgb %al, mutex（一条汇编完成 原子性 不会被中断）
+//      if(al寄存器内值 > 0) { return 0; }
+//      else { 挂起等待; }
+//      goto lock;（循环检测阻塞等待）
+// 只有当al内的值为1才拥有锁，且1只有一个
+// 即哪一个线程al寄存器内值为1则拥有锁
+// unlock:
+//        movb $1 mutex;
+//        唤醒等待锁mutex的线程
+//        return 0;
+// 解锁则将线程拥有的1还给锁mutex，并唤醒等待锁的线程
+
 // 全局共享变量 共享资源
 int tickets = 1000;
 
@@ -32,34 +49,40 @@ void *get_tickets(void *args)
 {
     // std::string user_name = static_cast<const char *>(args);
     ThreadData *td = static_cast<ThreadData *>(args);
+
     while (true)
     {
-        pthread_mutex_lock(td->mutex_p);
-        if (tickets > 0)
+        // 不给uslepp加锁 防止单个线程循环占用锁
         {
-            // 为了模拟数据不一致问题 进判断之后先休眠
-            // user4正在抢票 剩余票量 : 0
-            // user3正在抢票 剩余票量:-1
-            // user5正在抢票 剩余票量:-2
-            // user1正在抢票 剩余票量:-3
-            // user2正在抢票 剩余票量:-4
-            // sleep(2);
-            
-            std::cout << td->thread_name << "正在抢票 "
-                      << "剩余票量:" << --tickets << std::endl;
+            // 出此代码块{}会自动销毁 即自动解锁
+            LockGuard lockGuard(&lock); // RAII风格
+            // pthread_mutex_lock(td->mutex_p);
+            if (tickets > 0)
+            {
+                // 为了模拟数据不一致问题 进判断之后先休眠
+                // user4正在抢票 剩余票量 : 0
+                // user3正在抢票 剩余票量:-1
+                // user5正在抢票 剩余票量:-2
+                // user1正在抢票 剩余票量:-3
+                // user2正在抢票 剩余票量:-4
+                // sleep(2);
 
-            if (tickets == 0)
-                std::cout << "票已售罄！" << std::endl;
+                std::cout << td->thread_name << "正在抢票 "
+                          << "剩余票量:" << --tickets << std::endl;
 
-            pthread_mutex_unlock(td->mutex_p);
-            // 模拟抢票后的其他操作(如生成订单) 防止单个线程无线抢票
-            usleep(5000);
+                if (tickets == 0)
+                    std::cout << "票已售罄！" << std::endl;
+
+                // pthread_mutex_unlock(td->mutex_p);
+            }
+            else
+            {
+                // pthread_mutex_unlock(td->mutex_p);
+                break;
+            }
         }
-        else
-        {
-            pthread_mutex_unlock(td->mutex_p);
-            break;
-        }
+        // 模拟抢票后的其他操作(如生成订单) 防止单个线程无线抢票
+        usleep(5000);
     }
     return nullptr;
 }
@@ -67,12 +90,12 @@ void *get_tickets(void *args)
 int main()
 {
     // 初始化锁
-    pthread_mutex_t lock;
-    pthread_mutex_init(&lock, nullptr);
+    // pthread_mutex_t lock;
+    // pthread_mutex_init(&lock, nullptr);
     // 锁也是共享（临界）资源是否需要被保护呢？
-    // pthread_mutex_lock pthread_mutex_unlock 
-    // 加锁（原子操作）解锁动作得是安全的！ 
-    // 申请锁成功执行流正常向后执行 
+    // pthread_mutex_lock pthread_mutex_unlock
+    // 加锁（原子操作）解锁动作得是安全的！
+    // 申请锁成功执行流正常向后执行
     // 暂时未申请成功执行流则阻塞（锁在被其他执行流使用）
     // 谁持有锁则进入临界区执行
     // pthread_mutex_trylock（非阻塞方式）不能上锁则直接出错返回
@@ -95,6 +118,7 @@ int main()
     // thread2->join();
     // thread3->join();
     // thread4->join();
+
     std::vector<pthread_t> tids(NUM);
     for (int i = 0; i < 4; ++i)
     {
@@ -115,5 +139,4 @@ int main()
 
     // 销毁锁
     pthread_mutex_destroy(&lock);
-    
 }
