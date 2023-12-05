@@ -115,4 +115,5 @@ int main()
 
     // 销毁锁
     pthread_mutex_destroy(&lock);
+    
 }
