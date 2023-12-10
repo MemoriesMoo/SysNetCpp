@@ -1,30 +1,28 @@
 #include "udpClient.hpp"
-#include <thread> // 用于休眠
+#include <memory>
 
-int main()
+static void usage(char *proc)
 {
-    // 指定服务器的IP地址和端口号
-    std::string serverIp = "127.0.0.1"; // 服务器IP地址
-    uint16_t serverPort = 12345;        // 服务器端口号
+    std::cout << "\nUsage:\n\t"
+              << proc << " server_ip server_port \n\n";
+}
 
-    // 创建 UDP 客户端对象
-    Client::udpClient client(serverIp, serverPort);
-
-    // 初始化客户端
-    client.initClient();
-
-    // 准备要发送的数据
-    std::string dataToSend = "Hello, Server!";
-    int sendInterval = 1; // 发送数据的间隔时间（秒）
-
-    while (true)
+/* ./udpClient server_ip server_port */
+int main(int argc, char *argv[])
+{
+    if (argc != 3)
     {
-        // 发送数据到服务器
-        client.sendData(dataToSend);
-
-        // 休眠指定的时间
-        std::this_thread::sleep_for(std::chrono::seconds(sendInterval));
+        usage(argv[0]);
+        exit(USAGE_ERR);
     }
+
+    std::string serverIp = argv[1];
+    uint16_t serverPort = atoi(argv[2]);
+
+    std::unique_ptr<udpClient> ucli(new udpClient(serverIp, serverPort));
+
+    ucli->init();
+    ucli->run();
 
     return 0;
 }

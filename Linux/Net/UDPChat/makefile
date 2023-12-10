@@ -1,26 +1,22 @@
-# 编译器和编译选项
-CC = g++
-CXXFLAGS = -std=c++11
+# 设置 C++ 编译器
+CXX := g++
+# 设置 C++ 编译标志
+CXXFLAGS := -std=c++11 -lpthread
 
-# 目标文件和源文件
-CLIENT_TARGET = udpClient
-SERVER_TARGET = udpServer
-CLIENT_SRCS = udpClient.cpp
-SERVER_SRCS = udpServer.cpp
+# 申明虚拟目标
+.PHONY: all clean
 
-# 默认目标
-.PHONY: all
-all: $(CLIENT_TARGET) $(SERVER_TARGET)
+# 默认目标：构建 udpClient 和 udpServer
+all: udpClient udpServer
 
-# 编译客户端
-$(CLIENT_TARGET): $(CLIENT_SRCS)
-	$(CC) -o $@ $^ $(CXXFLAGS)
+# 构建 udpClient 目标
+udpClient: udpClient.cpp
+	$(CXX) $(CXXFLAGS) -o $@ $^
 
-# 编译服务器
-$(SERVER_TARGET): $(SERVER_SRCS)
-	$(CC) -o $@ $^ $(CXXFLAGS)
+# 构建 udpServer 目标
+udpServer: udpServer.cpp
+	$(CXX) $(CXXFLAGS) -o $@ $^
 
-# 清理生成的文件
-.PHONY: clean
+# 清理生成的可执行文件
 clean:
-	rm -f $(CLIENT_TARGET) $(SERVER_TARGET)
+	rm -f udpClient udpServer

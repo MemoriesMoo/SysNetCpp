@@ -4,102 +4,108 @@
 #include <string>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <unistd.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
 #include <cerrno>
 #include <cstring>
-#include <cstdlib>
-#include <arpa/inet.h>
+#include <strings.h>
+#include <unistd.h>
+#include <functional>
 
-namespace Server
+typedef std::function<void(std::string, uint16_t, std::string, int)> func_t;
+
+enum
 {
-    const static std::string defaultIp = "0.0.0.0";
-    enum
+    SOCKET_ERR = 2,
+    BIND_ERR,
+    USAGE_ERR,
+    OPEN_ERR,
+    FILE_FORMAT_ERR
+};
+
+class udpServer
+{
+    static const std::string defaultIp;
+
+public:
+    udpServer(const func_t &callBack, const uint16_t &port, const std::string &ip = defaultIp)
+        : _callBack(callBack), _port(port), _ip(ip), _sockfd(-1) {}
+
+    void init()
     {
-        SOCKET_ERR = 2,
-        BIND_ERR = 3
-    };
+        /* 1.创建套接字 */
+        _sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+        if (_sockfd == -1)
+        {
+            std::cerr << "Socket error: " << errno
+                      << " (" << strerror(errno) << ")" << std::endl;
+            exit(SOCKET_ERR);
+        }
 
-    class udpServer
+        /* 2.绑定 port 和 ip */
+        struct sockaddr_in local;
+        bzero(&local, sizeof(local));
+
+        /* 协议 */
+        local.sin_family = AF_INET;
+        /* 通信双方都要能获取对方的 IP 与端口号 */
+        /* 多字节涉及网络中的大小端问题 */
+        local.sin_port = htons(_port);
+        /* string -> uint32 + htonl() == inet_addr() */
+        /* C 语言结构体可以直接赋值吗？ 不行，所以得理清内部结构 */
+        // local.sin_addr.s_addr = inet_addr(_ip.c_str());
+        local.sin_addr.s_addr = htonl(INADDR_ANY); /* 任意地址访问 */
+
+        int ret = bind(_sockfd, (sockaddr *)&local, sizeof(local));
+        if (ret == -1)
+        {
+            std::cerr << "Bind error: " << errno
+                      << " (" << strerror(errno) << ")" << std::endl;
+            exit(BIND_ERR);
+        }
+    }
+
+    void start()
     {
-    public:
-        // 构造函数，初始化端口号和IP地址
-        udpServer(const uint16_t &port, const std::string &ip = defaultIp)
-            : _port(port),
-              _ip(ip),
-              _sockfd(-1)
+        /* 服务器的本质：无限循环，常驻内存 注意持续内存泄露问题 */
+        /* 读取数据 */
+        while (true)
         {
-        }
+            char messBuffer[1024]{0};
+            struct sockaddr_in client;
+            socklen_t len = sizeof(client);
+            ssize_t readBytes = recvfrom(_sockfd, messBuffer, sizeof(messBuffer) - 1, 0, (sockaddr *)&client, &len);
 
-        // 初始化服务器
-        void initServer()
-        {
-            // 创建套接字
-            _sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-
-            // 检查套接字创建是否成功
-            if (_sockfd == -1)
+            /* 收到的数据是谁发送的？*/
+            if (readBytes > 0)
             {
-                std::cerr << "socket error " << errno << ": " << strerror(errno) << std::endl;
-                exit(SOCKET_ERR);
-            }
+                /* ip -> 点分十进制  inet_ntoa() */
+                std::string clientIp = inet_ntoa(client.sin_addr);
+                /* 将网络中的端口号进行转化 */
+                uint16_t clientPort = ntohs(client.sin_port);
+                std::string message = messBuffer;
 
-            // 准备本地套接字地址
-            struct sockaddr_in local;
-            local.sin_family = AF_INET;                     // 地址族为IPv4
-            local.sin_port = htons(_port);                  // 设置端口号，需要使用htons函数进行字节序转换
-            local.sin_addr.s_addr = inet_addr(_ip.c_str()); // 设置IP地址
+                /* 展示收到的消息信息 */
+                std::cout << "Received from [" << clientIp << "] "
+                          << "at port [" << clientPort << "]: "
+                          << message;
 
-            // 绑定套接字到本地地址
-            int res = bind(_sockfd, (struct sockaddr *)&local, sizeof(local));
-
-            // 检查是否绑定成功
-            if (res == -1)
-            {
-                std::cerr << "bind error " << errno << ": " << strerror(errno) << std::endl;
-                exit(BIND_ERR);
+                /* 如何对数据做处理？*/
+                _callBack(clientIp, clientPort, message, _sockfd);
             }
         }
+    }
 
-        // 启动服务器，接收和处理UDP数据包
-        void start()
-        {
-            while (true)
-            {
-                char buffer[1024]; // 用于接收数据的缓冲区
-                struct sockaddr_in clientAddr;
-                socklen_t clientAddrLen = sizeof(clientAddr);
+    ~udpServer()
+    {
+    }
 
-                ssize_t bytesRead = recvfrom(_sockfd, buffer, sizeof(buffer), 0, (struct sockaddr *)&clientAddr, &clientAddrLen);
+private:
+    uint16_t _port;  /* 服务器端口号 */
+    std::string _ip; /* 服务器 IP 地址 */
+    int _sockfd;
+    func_t _callBack; /* 回调函数 */
+};
 
-                if (bytesRead > 0)
-                {
-                    // 处理接收到的数据
-                    processReceivedData(buffer, bytesRead, clientAddr);
-                }
-            }
-        }
-
-        // 处理接收到的UDP数据包
-        void processReceivedData(const char *data, ssize_t dataSize, const struct sockaddr_in &clientAddr)
-        {
-            // data: 接收到的数据
-            // dataSize: 数据的大小
-            // clientAddr: 发送数据的客户端地址信息
-
-            // 将接收到的数据打印到标准输出
-            std::cout << "Received " << dataSize << " bytes from " << inet_ntoa(clientAddr.sin_addr) << ":" << ntohs(clientAddr.sin_port) << std::endl;
-            std::cout << "Data: " << std::string(data, dataSize) << std::endl;
-        }
-
-        // 析构函数，关闭套接字
-        ~udpServer()
-        {
-            close(_sockfd); // 关闭套接字
-        }
-
-    private:
-        uint16_t _port;  // 服务器端口号
-        std::string _ip; // 服务器IP地址
-        int _sockfd;     // 套接字文件描述符
-    };
-}
+/* 默认 IP 地址 点分十进制风格 */
+const std::string udpServer::defaultIp = "0.0.0.0";
