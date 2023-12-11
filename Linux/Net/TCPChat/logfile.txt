@@ -1,5 +1,93 @@
-[NORMAL] [2023-12-11 01:46:47] [502] Proc start success.
-[NORMAL] [2023-12-11 01:46:47] [502] Create socket success.
-[NORMAL] [2023-12-11 01:46:47] [502] Bind socket success.
-[NORMAL] [2023-12-11 01:46:47] [502] Listen socket success.
-[FATAL] [2023-12-11 01:47:10] [640] Usage illegal.
+[NORMAL] [2023-12-11 20:35:32] [22336] Tcpserver start success.
+[NORMAL] [2023-12-11 20:35:32] [22336] Create socket success.
+[NORMAL] [2023-12-11 20:35:32] [22336] Bind socket success.
+[NORMAL] [2023-12-11 20:35:32] [22336] Listen socket success.
+[NORMAL] [2023-12-11 20:35:35] [22350] Tcpclient start success.
+[NORMAL] [2023-12-11 20:35:35] [22350] Create socket success.
+[NORMAL] [2023-12-11 20:35:35] [22336] Accept new link success
+[NORMAL] [2023-12-11 20:35:35] [22350] Socket connect success
+[NORMAL] [2023-12-11 20:35:37] [22396] Tcpclient start success.
+[NORMAL] [2023-12-11 20:35:37] [22396] Create socket success.
+[NORMAL] [2023-12-11 20:35:37] [22396] Socket connect success
+[NORMAL] [2023-12-11 20:35:37] [22336] Accept new link success
+[NORMAL] [2023-12-11 20:35:43] [22336] Client quit, server quit.
+[NORMAL] [2023-12-11 20:35:44] [22464] Tcpclient start success.
+[NORMAL] [2023-12-11 20:35:44] [22464] Create socket success.
+[NORMAL] [2023-12-11 20:35:44] [22464] Socket connect success
+[NORMAL] [2023-12-11 20:35:44] [22336] Accept new link success
+[NORMAL] [2023-12-11 20:35:49] [22336] Client quit, server quit.
+[NORMAL] [2023-12-11 20:35:52] [22553] Tcpclient start success.
+[NORMAL] [2023-12-11 20:35:52] [22553] Create socket success.
+[NORMAL] [2023-12-11 20:35:52] [22336] Accept new link success
+[NORMAL] [2023-12-11 20:35:52] [22553] Socket connect success
+[NORMAL] [2023-12-11 20:35:57] [22336] Client quit, server quit.
+[NORMAL] [2023-12-11 20:35:58] [22620] Tcpclient start success.
+[NORMAL] [2023-12-11 20:35:58] [22620] Create socket success.
+[NORMAL] [2023-12-11 20:35:58] [22336] Accept new link success
+[NORMAL] [2023-12-11 20:35:58] [22620] Socket connect success
+[NORMAL] [2023-12-11 20:36:00] [22336] Client quit, server quit.
+[NORMAL] [2023-12-11 20:36:00] [22639] Tcpclient start success.
+[NORMAL] [2023-12-11 20:36:00] [22639] Create socket success.
+[NORMAL] [2023-12-11 20:36:00] [22639] Socket connect success
+[NORMAL] [2023-12-11 20:36:00] [22336] Accept new link success
+[NORMAL] [2023-12-11 20:36:01] [22336] Client quit, server quit.
+[NORMAL] [2023-12-11 20:36:01] [22661] Tcpclient start success.
+[NORMAL] [2023-12-11 20:36:01] [22661] Create socket success.
+[NORMAL] [2023-12-11 20:36:01] [22336] Accept new link success
+[NORMAL] [2023-12-11 20:36:01] [22661] Socket connect success
+[NORMAL] [2023-12-11 20:36:02] [22336] Client quit, server quit.
+[NORMAL] [2023-12-11 20:36:02] [22676] Tcpclient start success.
+[NORMAL] [2023-12-11 20:36:02] [22676] Create socket success.
+[NORMAL] [2023-12-11 20:36:02] [22676] Socket connect success
+[NORMAL] [2023-12-11 20:36:02] [22336] Accept new link success
+[NORMAL] [2023-12-11 20:36:03] [22336] Client quit, server quit.
+[NORMAL] [2023-12-11 20:36:03] [22689] Tcpclient start success.
+[NORMAL] [2023-12-11 20:36:03] [22689] Create socket success.
+[NORMAL] [2023-12-11 20:36:03] [22689] Socket connect success
+[NORMAL] [2023-12-11 20:36:03] [22336] Accept new link success
+[NORMAL] [2023-12-11 20:36:04] [22336] Client quit, server quit.
+[NORMAL] [2023-12-11 20:36:04] [22336] Accept new link success
+[NORMAL] [2023-12-11 20:36:04] [22336] Client quit, server quit.
+[NORMAL] [2023-12-11 20:36:04] [22700] Tcpclient start success.
+[NORMAL] [2023-12-11 20:36:04] [22700] Create socket success.
+[NORMAL] [2023-12-11 20:36:04] [22336] Accept new link success
+[NORMAL] [2023-12-11 20:36:04] [22700] Socket connect success
+[NORMAL] [2023-12-11 20:36:05] [22336] Client quit, server quit.
+[NORMAL] [2023-12-11 20:36:06] [22716] Tcpclient start success.
+[NORMAL] [2023-12-11 20:36:06] [22716] Create socket success.
+[NORMAL] [2023-12-11 20:36:06] [22336] Accept new link success
+[NORMAL] [2023-12-11 20:36:06] [22716] Socket connect success
+[NORMAL] [2023-12-11 20:36:06] [22336] Client quit, server quit.
+[NORMAL] [2023-12-11 20:36:07] [22740] Tcpclient start success.
+[NORMAL] [2023-12-11 20:36:07] [22740] Create socket success.
+[NORMAL] [2023-12-11 20:36:07] [22336] Accept new link success
+[NORMAL] [2023-12-11 20:36:07] [22740] Socket connect success
+[NORMAL] [2023-12-11 20:36:08] [22336] Client quit, server quit.
+[NORMAL] [2023-12-11 20:36:09] [22769] Tcpclient start success.
+[NORMAL] [2023-12-11 20:36:09] [22769] Create socket success.
+[NORMAL] [2023-12-11 20:36:09] [22336] Accept new link success
+[NORMAL] [2023-12-11 20:36:09] [22769] Socket connect success
+[NORMAL] [2023-12-11 20:36:09] [22336] Client quit, server quit.
+[NORMAL] [2023-12-11 20:36:10] [22781] Tcpclient start success.
+[NORMAL] [2023-12-11 20:36:10] [22781] Create socket success.
+[NORMAL] [2023-12-11 20:36:10] [22336] Accept new link success
+[NORMAL] [2023-12-11 20:36:10] [22781] Socket connect success
+[NORMAL] [2023-12-11 20:40:08] [23784] Tcpclient start success.
+[NORMAL] [2023-12-11 20:40:08] [23784] Create socket success.
+[FATAL] [2023-12-11 20:40:08] [23784] Socket connect error
+[NORMAL] [2023-12-11 20:40:13] [23824] Tcpclient start success.
+[NORMAL] [2023-12-11 20:40:13] [23824] Create socket success.
+[FATAL] [2023-12-11 20:40:13] [23824] Socket connect error
+[NORMAL] [2023-12-11 21:02:04] [29015] Tcpserver start success.
+[NORMAL] [2023-12-11 21:02:04] [29015] Create socket success.
+[NORMAL] [2023-12-11 21:02:04] [29015] Bind socket success.
+[NORMAL] [2023-12-11 21:02:04] [29015] Listen socket success.
+[NORMAL] [2023-12-11 21:02:18] [29176] Tcpclient start success.
+[NORMAL] [2023-12-11 21:02:18] [29176] Create socket success.
+[NORMAL] [2023-12-11 21:02:18] [29015] Accept new link success
+[NORMAL] [2023-12-11 21:02:18] [29176] Socket connect success
+[NORMAL] [2023-12-11 21:02:23] [29213] Tcpclient start success.
+[NORMAL] [2023-12-11 21:02:23] [29213] Create socket success.
+[NORMAL] [2023-12-11 21:02:23] [29015] Accept new link success
+[NORMAL] [2023-12-11 21:02:23] [29213] Socket connect success
+[NORMAL] [2023-12-11 21:06:26] [29015] Client quit, server quit.

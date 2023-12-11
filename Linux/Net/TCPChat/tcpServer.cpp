@@ -7,7 +7,7 @@ static void usage(std::string proc)
     std::cout << "\nUsage:\n\t"
               << proc << " local_port\n\n";
 
-    logMessage(FATAL, "Usage illegal.");
+    logMessage(FATAL, "Tcpserver use illegal.");
 }
 
 /* 启动方法 类似udpServer */
@@ -20,7 +20,7 @@ int main(int argc, char *argv[])
         usage(argv[0]);
         exit(USAGE_ERROR);
     }
-    logMessage(NORMAL, "Proc start success.");
+    logMessage(NORMAL, "Tcpserver start success.");
 
     /* 获取使用的端口号 */
     uint16_t localPort = atoi(argv[1]);

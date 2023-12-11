@@ -1,7 +1,7 @@
 # 设置 C++ 编译器
 CXX := g++
 # 设置 C++ 编译标志
-CXXFLAGS := -std=c++11
+CXXFLAGS := -std=c++11 -lpthread
 
 # 申明虚拟目标
 .PHONY: all clean
